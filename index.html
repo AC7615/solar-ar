@@ -1,197 +1,218 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>八大行星科学展 AR 互动</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <title>Solar System AR </title>
+    
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 
     <style>
-      /* --- UI 界面样式：半透明科技感面板 --- */
-      body { margin: 0; font-family: 'Microsoft YaHei', sans-serif; }
-      
-      #info-panel {
-        display: none; /* 默认隐藏 */
+      /* 按钮样式 */
+      #ar-button {
+        display: none;
         position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(0, 0, 0, 0.85); /* 深黑背景 */
-        color: white;
-        padding: 20px 20px 40px 20px;
-        box-sizing: border-box;
-        text-align: center;
-        z-index: 999;
-        border-top: 3px solid #00d2ff; /* 顶部亮蓝条 */
-        border-top-left-radius: 20px;
-        border-top-right-radius: 20px;
-        animation: slideUp 0.3s ease-out;
-      }
-
-      @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
-      }
-
-      #info-title {
-        font-size: 26px;
-        font-weight: bold;
-        color: #ffcc00;
-        margin-bottom: 10px;
-        text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-      }
-
-      #info-desc {
-        font-size: 16px;
-        line-height: 1.6;
-        color: #ddd;
-        margin-bottom: 20px;
-        max-height: 150px;
-        overflow-y: auto; /*如果文字太长可以滚动*/
-      }
-
-      #close-btn {
-        background: linear-gradient(90deg, #ff4444, #cc0000);
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        background: linear-gradient(90deg, #ff512f, #dd2476);
         color: white;
         border: none;
-        padding: 10px 40px;
         border-radius: 50px;
-        font-size: 16px;
+        padding: 15px 30px;
+        font-family: sans-serif;
+        font-weight: bold;
+        font-size: 18px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
         cursor: pointer;
-        box-shadow: 0 4px 10px rgba(255, 68, 68, 0.4);
+        touch-action: none; 
+      }
+      
+      #ar-button:active { transform: translateX(-50%) scale(0.95); }
+
+      model-viewer {
+        position: fixed;
+        top: 0; left: 0; width: 1px; height: 1px; z-index: -1; opacity: 0;
       }
     </style>
 
     <script>
-      // --- 互动组件：处理点击事件 ---
-      AFRAME.registerComponent('click-handler', {
-        schema: {
-          name: {type: 'string', default: ''},
-          desc: {type: 'string', default: ''}
-        },
+      // --- 手势控制 (保持不变) ---
+      AFRAME.registerComponent('swipe-control', {
+        schema: { factor: {default: 0.015} },
         init: function () {
-          this.el.addEventListener('click', () => {
-            const panel = document.querySelector("#info-panel");
-            const title = document.querySelector("#info-title");
-            const desc = document.querySelector("#info-desc");
-
-            // 更新文字
-            title.innerText = this.data.name;
-            desc.innerText = this.data.desc;
-            
-            // 显示面板
-            panel.style.display = 'block';
-
-            // 点击时的缩放动画反馈
-            this.el.setAttribute('animation__click', {
-              property: 'scale',
-              to: '0.4 0.4 0.4', // 稍微变大一点点
-              dur: 150,
-              dir: 'alternate',
-              loop: 1
-            });
-          });
+          this.handleTouchStart = this.handleTouchStart.bind(this);
+          this.handleTouchMove = this.handleTouchMove.bind(this);
+          this.resetAnimation = this.resetAnimation.bind(this);
+          this.initialAnimation = this.el.getAttribute('animation');
+          this.el.sceneEl.addEventListener('touchstart', this.handleTouchStart, {passive: false});
+          this.el.sceneEl.addEventListener('touchmove', this.handleTouchMove, {passive: false});
+          const targetEntity = this.el.closest('[mindar-image-target]');
+          if (targetEntity) { targetEntity.addEventListener('targetFound', this.resetAnimation); }
+          this.startX = 0; this.startY = 0; this.isDragging = false;
+        },
+        resetAnimation: function () {
+          this.isDragging = false;
+          this.el.object3D.rotation.set(0, 0, 0);
+          if (!this.el.hasAttribute('animation') && this.initialAnimation) {
+            this.el.setAttribute('animation', this.initialAnimation);
+          }
+        },
+        handleTouchStart: function (event) {
+          this.startX = event.touches[0].clientX;
+          this.startY = event.touches[0].clientY;
+          this.isDragging = true;
+          if (this.el.hasAttribute('animation')) { this.el.removeAttribute('animation'); }
+        },
+        handleTouchMove: function (event) {
+          if (!this.isDragging) return;
+          event.preventDefault(); 
+          const currentX = event.touches[0].clientX;
+          const currentY = event.touches[0].clientY;
+          const deltaX = currentX - this.startX;
+          const deltaY = currentY - this.startY;
+          this.startX = currentX;
+          this.startY = currentY;
+          this.el.object3D.rotation.y += deltaX * this.data.factor;
+          this.el.object3D.rotation.x += deltaY * this.data.factor;
         }
       });
 
-      function closePanel() {
-        document.querySelector("#info-panel").style.display = 'none';
-      }
+      // --- ⭐ 合照逻辑 (已更新为英文) ⭐ ---
+      document.addEventListener("DOMContentLoaded", function() {
+        const arButton = document.getElementById("ar-button");
+        const modelViewer = document.getElementById("viewer-singleton");
+        const buttonText = document.getElementById("btn-text");
+
+        // ⭐ 这里把名字改成英文了，这样按钮就会显示 "Photo with Mercury"
+        const planets = [
+          { index: 0, name: "Mercury", file: "./Mercury.glb" },
+          { index: 1, name: "Venus",   file: "./Venus.glb" },
+          { index: 2, name: "Earth",   file: "./Earth.glb" },
+          { index: 3, name: "Mars",    file: "./Mars.glb" },
+          { index: 4, name: "Jupiter", file: "./Jupiter.glb" },
+          { index: 5, name: "Saturn",  file: "./Saturn.glb" },
+          { index: 6, name: "Uranus",  file: "./Uranus.glb" },
+          { index: 7, name: "Neptune", file: "./Neptune.glb" }
+        ];
+
+        arButton.addEventListener("click", () => {
+          if (!modelViewer.src) {
+            alert("Model not loaded yet.");
+            return;
+          }
+          const scene = document.querySelector('a-scene');
+          if (scene) { scene.pause(); const video = document.querySelector('video'); if (video) video.pause(); }
+
+          try {
+            modelViewer.activateAR();
+          } catch (error) {
+            alert("Failed to activate AR: " + error);
+            if (scene) scene.play();
+          }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                const scene = document.querySelector('a-scene');
+                const video = document.querySelector('video');
+                if (scene) scene.play();
+                if (video) video.play();
+            }
+        });
+
+        const scene = document.querySelector('a-scene');
+        planets.forEach(planet => {
+          const target = document.querySelector(`[mindar-image-target="targetIndex: ${planet.index}"]`);
+          if (target) {
+            target.addEventListener("targetFound", event => {
+              modelViewer.src = planet.file;
+              
+              // ⭐ 翻译部分在这里：
+              // 原文："与" + planet.name + "合照 📷"
+              // 英文："Photo with " + planet.name + " 📷"
+              buttonText.innerText = "Photo with " + planet.name + " 📷";
+              
+              arButton.style.display = "flex";
+            });
+            target.addEventListener("targetLost", event => {
+              arButton.style.display = "none";
+            });
+          }
+        });
+      });
     </script>
   </head>
-
+  
   <body>
-    <div id="info-panel">
-      <div id="info-title"></div>
-      <div id="info-desc"></div>
-      <button id="close-btn" onclick="closePanel()">关闭介绍</button>
-    </div>
+    <button id="ar-button"><span id="btn-text">Take Photo</span></button>
+
+    <model-viewer 
+      id="viewer-singleton" 
+      src="" 
+      ar 
+      ar-modes="scene-viewer webxr quick-look" 
+      camera-controls 
+      auto-rotate 
+      shadow-intensity="1">
+    </model-viewer>
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001;" 
              color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
+             renderer="colorManagement: true, physicallyCorrectLights: false, sortObjects: true" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
 
       <a-assets>
-        <a-asset-item id="mercury" src="./mercury.glb"></a-asset-item>
-        <a-asset-item id="venus" src="./venus.glb"></a-asset-item>
-        <a-asset-item id="earth" src="./earth.glb"></a-asset-item>
-        <a-asset-item id="mars" src="./mars.glb"></a-asset-item>
-        <a-asset-item id="jupiter" src="./jupiter.glb"></a-asset-item>
-        <a-asset-item id="saturn" src="./saturn.glb"></a-asset-item>
-        <a-asset-item id="uranus" src="./uranus.glb"></a-asset-item>
-        <a-asset-item id="neptune" src="./neptune.glb"></a-asset-item>
+        <a-asset-item id="Mercury" src="./Mercury.glb"></a-asset-item>
+        <a-asset-item id="Venus" src="./Venus.glb"></a-asset-item>
+        <a-asset-item id="Earth" src="./Earth.glb"></a-asset-item>
+        <a-asset-item id="Mars" src="./Mars.glb"></a-asset-item>
+        <a-asset-item id="Jupiter" src="./Jupiter.glb"></a-asset-item>
+        <a-asset-item id="Saturn" src="./Saturn.glb"></a-asset-item>
+        <a-asset-item id="Uranus" src="./Uranus.glb"></a-asset-item>
+        <a-asset-item id="Neptune" src="./Neptune.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false">
-        <a-entity cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-entity>
-      </a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-light type="ambient" color="#ffffff" intensity="2"></a-light>
+      <a-light type="directional" color="#ffffff" intensity="1.5" position="2 4 4"></a-light>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model src="#mercury" position="0 0 0" scale="0.3 0.3 0.3" rotation="0 0 0" 
-          class="clickable"
-          click-handler="name: 水星 (Mercury); desc: 它是离太阳最近的行星，表面布满环形山，看起来很像月球。昼夜温差极大！"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear">
-        </a-gltf-model>
+        <a-entity rotation="90 0 0" position="0 0.3 0">
+          <a-gltf-model src="#Mercury" scale="0.55 0.55 0.55" swipe-control
+            animation="property: rotation; to: 0 -360 0; loop: true; dur: 35000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1">
-        <a-gltf-model src="#venus" position="0 0 0" scale="0.3 0.3 0.3" rotation="0 0 0" 
-          class="clickable"
-          click-handler="name: 金星 (Venus); desc: 全天最亮的行星。它有厚厚的大气层，是太阳系最热的行星。"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 25000; easing: linear">
-        </a-gltf-model>
+        <a-entity rotation="90 0 0" position="0 0.3 0">
+          <a-gltf-model src="#Venus" scale="0.6 0.6 0.6" swipe-control
+            animation="property: rotation; to: 0 360 0; loop: true; dur: 50000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
       </a-entity>
-
+      
       <a-entity mindar-image-target="targetIndex: 2">
-        <a-gltf-model src="#earth" position="0 0 0" scale="0.3 0.3 0.3" rotation="0 0 0" 
-          class="clickable"
-          click-handler="name: 地球 (Earth); desc: 我们的家园！它是蓝色的，因为表面71%被海洋覆盖，是已知唯一有生命的星球。"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear">
-        </a-gltf-model>
+        <a-entity rotation="113 0 0" position="0 0.3 0">
+          <a-gltf-model src="#Earth" scale="0.001 0.001 0.001" swipe-control
+            animation="property: rotation; to: 0 -360 0; loop: true; dur: 20000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 3">
-        <a-gltf-model src="#mars" position="0 0 0" scale="0.3 0.3 0.3" rotation="0 0 0" 
-          class="clickable"
-          click-handler="name: 火星 (Mars); desc: 著名的红色星球（氧化铁/铁锈）。这里有太阳系最高的山——奥林帕斯山。"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear">
-        </a-gltf-model>
+        <a-entity rotation="115 0 0" position="0 0.3 0">
+          <a-gltf-model src="#Mars" scale="0.25 0.25 0.25" swipe-control
+            animation="property: rotation; to: 0 -360 0; loop: true; dur: 20000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 4">
-        <a-gltf-model src="#jupiter" position="0 0 0" scale="0.3 0.3 0.3" rotation="0 0 0" 
-          class="clickable"
-          click-handler="name: 木星 (Jupiter); desc: 太阳系的老大！体积能装下1300个地球。它是一个气态巨行星，拥有著名的大红斑风暴。"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear">
-        </a-gltf-model>
-      </a-entity>
-
-      <a-entity mindar-image-target="targetIndex: 5">
-        <a-gltf-model src="#saturn" position="0 0 0" scale="0.25 0.25 0.25" rotation="25 0 0" 
-          class="clickable"
-          click-handler="name: 土星 (Saturn); desc: 拥有最迷人的光环！它的密度比水还小，如果有个够大的浴缸，土星能浮在水面上。"
-          animation="property: rotation; to: 25 360 0; loop: true; dur: 20000; easing: linear">
-        </a-gltf-model>
-      </a-entity>
-
-      <a-entity mindar-image-target="targetIndex: 6">
-        <a-gltf-model src="#uranus" position="0 0 0" scale="0.3 0.3 0.3" rotation="0 0 0" 
-          class="clickable"
-          click-handler="name: 天王星 (Uranus); desc: 漂亮的青色冰巨星。它最特别的地方是“躺着”自转的，像个在轨道上滚动的球。"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear">
-        </a-gltf-model>
-      </a-entity>
-
-      <a-entity mindar-image-target="targetIndex: 7">
-        <a-gltf-model src="#neptune" position="0 0 0" scale="0.3 0.3 0.3" rotation="0 0 0" 
-          class="clickable"
-          click-handler="name: 海王星 (Neptune); desc: 离太阳最远、最冷的行星。它呈现深蓝色，内部风速惊人，是太阳系风暴最强的地方。"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear">
-        </a-gltf-model>
-      </a-entity>
-
-    </a-scene>
-  </body>
-</html>
+        <a-entity rotation="93 0 0" position="0 0.3 0">
+          <a-gltf-model src="#Jupiter"
