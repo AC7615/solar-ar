@@ -215,4 +215,36 @@
 
       <a-entity mindar-image-target="targetIndex: 4">
         <a-entity rotation="93 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Jupiter"
+          <a-gltf-model src="#Jupiter" scale="0.003 0.003 0.003" swipe-control
+            animation="property: rotation; to: 0 -360 0; loop: true; dur: 8000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 5">
+        <a-entity rotation="117 0 0" position="0 0.3 0">
+          <a-gltf-model src="#Saturn" scale="0.001 0.001 0.001" swipe-control
+            animation="property: rotation; to: 0 -360 0; loop: true; dur: 9000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 6">
+        <a-entity rotation="90 0 0" position="0 0.3 0">
+          <a-gltf-model src="#Uranus" scale="0.00001 0.00001 0.00001" rotation="0 0 90" swipe-control
+            animation="property: rotation; to: 0 -360 90; loop: true; dur: 15000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
+      </a-entity>
+      
+      <a-entity mindar-image-target="targetIndex: 7">
+        <a-entity rotation="118 0 0" position="0 0.3 0">
+          <a-gltf-model src="#Neptune" scale="0.001 0.001 0.001" swipe-control
+            animation="property: rotation; to: 0 -360 0; loop: true; dur: 16000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
+      </a-entity>
+
+    </a-scene>
+  </body>
+</html>
