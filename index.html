@@ -81,13 +81,13 @@
         }
       });
 
-      // --- ⭐ 合照逻辑 (已更新为英文) ⭐ ---
+      // --- 合照逻辑 ---
       document.addEventListener("DOMContentLoaded", function() {
         const arButton = document.getElementById("ar-button");
         const modelViewer = document.getElementById("viewer-singleton");
         const buttonText = document.getElementById("btn-text");
 
-        // ⭐ 这里把名字改成英文了，这样按钮就会显示 "Photo with Mercury"
+        // ⭐ 新增了第9个：Solar System (Index 8)
         const planets = [
           { index: 0, name: "Mercury", file: "./Mercury.glb" },
           { index: 1, name: "Venus",   file: "./Venus.glb" },
@@ -96,31 +96,23 @@
           { index: 4, name: "Jupiter", file: "./Jupiter.glb" },
           { index: 5, name: "Saturn",  file: "./Saturn.glb" },
           { index: 6, name: "Uranus",  file: "./Uranus.glb" },
-          { index: 7, name: "Neptune", file: "./Neptune.glb" }
+          { index: 7, name: "Neptune", file: "./Neptune.glb" },
+          { index: 8, name: "Solar System", file: "./Solarsystem.glb" } 
         ];
 
         arButton.addEventListener("click", () => {
-          if (!modelViewer.src) {
-            alert("Model not loaded yet.");
-            return;
-          }
+          if (!modelViewer.src) { alert("Model not loaded yet."); return; }
           const scene = document.querySelector('a-scene');
           if (scene) { scene.pause(); const video = document.querySelector('video'); if (video) video.pause(); }
 
-          try {
-            modelViewer.activateAR();
-          } catch (error) {
-            alert("Failed to activate AR: " + error);
-            if (scene) scene.play();
-          }
+          try { modelViewer.activateAR(); } catch (error) { alert("Failed: " + error); if (scene) scene.play(); }
         });
 
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 const scene = document.querySelector('a-scene');
                 const video = document.querySelector('video');
-                if (scene) scene.play();
-                if (video) video.play();
+                if (scene) scene.play(); if (video) video.play();
             }
         });
 
@@ -130,12 +122,7 @@
           if (target) {
             target.addEventListener("targetFound", event => {
               modelViewer.src = planet.file;
-              
-              // ⭐ 翻译部分在这里：
-              // 原文："与" + planet.name + "合照 📷"
-              // 英文："Photo with " + planet.name + " 📷"
               buttonText.innerText = "Photo with " + planet.name + " 📷";
-              
               arButton.style.display = "flex";
             });
             target.addEventListener("targetLost", event => {
@@ -151,13 +138,8 @@
     <button id="ar-button"><span id="btn-text">Take Photo</span></button>
 
     <model-viewer 
-      id="viewer-singleton" 
-      src="" 
-      ar 
-      ar-modes="scene-viewer webxr quick-look" 
-      camera-controls 
-      auto-rotate 
-      shadow-intensity="1">
+      id="viewer-singleton" src="" ar ar-modes="scene-viewer webxr quick-look" 
+      camera-controls auto-rotate shadow-intensity="1">
     </model-viewer>
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001;" 
@@ -175,6 +157,7 @@
         <a-asset-item id="Saturn" src="./Saturn.glb"></a-asset-item>
         <a-asset-item id="Uranus" src="./Uranus.glb"></a-asset-item>
         <a-asset-item id="Neptune" src="./Neptune.glb"></a-asset-item>
+        <a-asset-item id="SolarSystem" src="./Solarsystem.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -241,6 +224,14 @@
         <a-entity rotation="118 0 0" position="0 0.3 0">
           <a-gltf-model src="#Neptune" scale="0.001 0.001 0.001" swipe-control
             animation="property: rotation; to: 0 -360 0; loop: true; dur: 16000; easing: linear">
+          </a-gltf-model>
+        </a-entity>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 8">
+        <a-entity rotation="90 0 0" position="0 0 0">
+          <a-gltf-model src="#SolarSystem" scale="0.05 0.05 0.05" swipe-control
+            animation="property: rotation; to: 0 -360 0; loop: true; dur: 60000; easing: linear">
           </a-gltf-model>
         </a-entity>
       </a-entity>
