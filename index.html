@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <title>Solar System AR test</title>
+    <title>Solar System AR V4 </title>
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -12,7 +12,7 @@
     <style>
       /* --- 按钮容器 (Flex布局让两个按钮并排) --- */
       #button-container {
-        display: none; /* 默认隐藏，扫描到目标后显示 */
+        display: none;
         position: fixed;
         bottom: 50px;
         left: 50%;
@@ -23,12 +23,12 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        pointer-events: none; /* 让点击穿透容器背景 */
+        pointer-events: none; 
       }
 
       /* --- 通用按钮样式 --- */
       .ar-btn {
-        pointer-events: auto; /* 恢复按钮的点击响应 */
+        pointer-events: auto;
         border: none;
         border-radius: 50px;
         padding: 12px 24px;
@@ -48,12 +48,12 @@
 
       .ar-btn:active { transform: scale(0.95); }
 
-      /* 📷 拍照按钮颜色 (红/粉) */
+      /* 📷 拍照按钮颜色 */
       #photo-button {
         background: linear-gradient(90deg, #ff512f, #dd2476);
       }
 
-      /* 🌐 网页链接按钮颜色 (蓝/青) */
+      /* 🌐 网页链接按钮颜色 */
       #link-button {
         background: linear-gradient(90deg, #2193b0, #6dd5ed);
       }
@@ -106,7 +106,7 @@
         }
       });
 
-      // --- 主逻辑 ---
+      // --- 主逻辑 (已更新) ---
       document.addEventListener("DOMContentLoaded", function() {
         const buttonContainer = document.getElementById("button-container");
         const photoButton = document.getElementById("photo-button");
@@ -116,17 +116,17 @@
         // ⭐ 核心配置：您的 GAS 网址
         const baseUrl = "https://script.google.com/macros/s/AKfycbybbbXodQ8RR15i5tF9-7BUs0Dih5bToUJ_3SJiHJhNXF3Twk7oZqClyDSrOsvSb3i8/exec";
 
-        // 配置行星数据和对应的跳转参数
+        // 配置行星数据、模型文件、跳转链接、以及按钮文字
         const planets = [
-          { index: 0, name: "Mercury", file: "./Mercury.glb", url: baseUrl + "?page=mercury" },
-          { index: 1, name: "Venus",   file: "./Venus.glb",   url: baseUrl + "?page=venus" },
-          { index: 2, name: "Earth",   file: "./Earth.glb",   url: baseUrl + "?page=earth" },
-          { index: 3, name: "Mars",    file: "./Mars.glb",    url: baseUrl + "?page=mars" },
-          { index: 4, name: "Jupiter", file: "./Jupiter.glb", url: baseUrl + "?page=jupiter" },
-          { index: 5, name: "Saturn",  file: "./Saturn.glb",  url: baseUrl + "?page=saturn" },
-          { index: 6, name: "Uranus",  file: "./Uranus.glb",  url: baseUrl + "?page=uranus" },
-          { index: 7, name: "Neptune", file: "./Neptune.glb", url: baseUrl + "?page=neptune" },
-          { index: 8, name: "Solar System", file: "./Solarsystem.glb", url: baseUrl } // 太阳系直接去首页
+          { index: 0, name: "Mercury", buttonText: "Take a photo with Mercury", file: "./Mercury.glb", url: baseUrl + "?page=mercury" },
+          { index: 1, name: "Venus",   buttonText: "Take a photo with Venus", file: "./Venus.glb",   url: baseUrl + "?page=venus" },
+          { index: 2, name: "Earth",   buttonText: "Take a photo with Earth", file: "./Earth.glb",   url: baseUrl + "?page=earth" },
+          { index: 3, name: "Mars",    buttonText: "Take a photo with Mars", file: "./Mars.glb",    url: baseUrl + "?page=mars" },
+          { index: 4, name: "Jupiter", buttonText: "Take a photo with Jupiter", file: "./Jupiter.glb", url: baseUrl + "?page=jupiter" },
+          { index: 5, name: "Saturn",  buttonText: "Take a photo with Saturn", file: "./Saturn.glb",  url: baseUrl + "?page=saturn" },
+          { index: 6, name: "Uranus",  buttonText: "Take a photo with Uranus", file: "./Uranus.glb",  url: baseUrl + "?page=uranus" },
+          { index: 7, name: "Neptune", buttonText: "Take a photo with Neptune", file: "./Neptune.glb", url: baseUrl + "?page=neptune" },
+          { index: 8, name: "Solar System", buttonText: "Take a photo with Solar System", file: "./Solarsystem.glb", url: baseUrl }
         ];
 
         // 1. 拍照按钮点击
@@ -154,17 +154,16 @@
           const target = document.querySelector(`[mindar-image-target="targetIndex: ${planet.index}"]`);
           if (target) {
             target.addEventListener("targetFound", event => {
-              console.log("Found target:", planet.name);
               
               // 准备 3D 模型给 model-viewer (用于拍照)
               modelViewer.src = planet.file;
               
-              // 更新按钮文字
-              photoButton.innerText = "📷 " + planet.name;
+              // 更新按钮文字 (已去除 Emoji，使用完整的英文句子)
+              photoButton.innerText = planet.buttonText;
               
               // 更新跳转链接按钮事件
               linkButton.onclick = function() {
-                window.location.href = planet.url;
+                window.location.href = planet.url; // 跳转到 React SPA
               };
 
               // 显示按钮组
@@ -183,7 +182,7 @@
   
   <body>
     <div id="button-container">
-      <button id="photo-button" class="ar-btn">📷 Photo</button>
+      <button id="photo-button" class="ar-btn">Take a photo</button>
       <button id="link-button" class="ar-btn">🌐 Learn More</button>
     </div>
 
