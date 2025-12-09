@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <title>Solar System AR V3 </title>
+    <title>Solar System AR test</title>
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -10,28 +10,53 @@
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 
     <style>
-      /* 按钮样式 */
-      #ar-button {
-        display: none;
+      /* --- 按钮容器 (Flex布局让两个按钮并排) --- */
+      #button-container {
+        display: none; /* 默认隐藏，扫描到目标后显示 */
         position: fixed;
         bottom: 50px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 9999;
-        background: linear-gradient(90deg, #ff512f, #dd2476);
-        color: white;
+        display: flex; 
+        gap: 15px; 
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        pointer-events: none; /* 让点击穿透容器背景 */
+      }
+
+      /* --- 通用按钮样式 --- */
+      .ar-btn {
+        pointer-events: auto; /* 恢复按钮的点击响应 */
         border: none;
         border-radius: 50px;
-        padding: 15px 30px;
+        padding: 12px 24px;
         font-family: sans-serif;
         font-weight: bold;
-        font-size: 18px;
+        font-size: 16px;
+        color: white;
         box-shadow: 0 5px 15px rgba(0,0,0,0.4);
         cursor: pointer;
-        touch-action: none; 
+        touch-action: manipulation;
+        transition: transform 0.1s;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 5px;
       }
-      
-      #ar-button:active { transform: translateX(-50%) scale(0.95); }
+
+      .ar-btn:active { transform: scale(0.95); }
+
+      /* 📷 拍照按钮颜色 (红/粉) */
+      #photo-button {
+        background: linear-gradient(90deg, #ff512f, #dd2476);
+      }
+
+      /* 🌐 网页链接按钮颜色 (蓝/青) */
+      #link-button {
+        background: linear-gradient(90deg, #2193b0, #6dd5ed);
+      }
 
       model-viewer {
         position: fixed;
@@ -40,7 +65,7 @@
     </style>
 
     <script>
-      // --- 手势控制 (保持不变) ---
+      // --- 手势控制组件 (保持不变) ---
       AFRAME.registerComponent('swipe-control', {
         schema: { factor: {default: 0.015} },
         init: function () {
@@ -81,33 +106,41 @@
         }
       });
 
-      // --- 合照逻辑 ---
+      // --- 主逻辑 ---
       document.addEventListener("DOMContentLoaded", function() {
-        const arButton = document.getElementById("ar-button");
+        const buttonContainer = document.getElementById("button-container");
+        const photoButton = document.getElementById("photo-button");
+        const linkButton = document.getElementById("link-button");
         const modelViewer = document.getElementById("viewer-singleton");
-        const buttonText = document.getElementById("btn-text");
 
-        // ⭐ 新增了第9个：Solar System (Index 8)
+        // ⭐ 核心配置：您的 GAS 网址
+        const baseUrl = "https://script.google.com/macros/s/AKfycbybbbXodQ8RR15i5tF9-7BUs0Dih5bToUJ_3SJiHJhNXF3Twk7oZqClyDSrOsvSb3i8/exec";
+
+        // 配置行星数据和对应的跳转参数
         const planets = [
-          { index: 0, name: "Mercury", file: "./Mercury.glb" },
-          { index: 1, name: "Venus",   file: "./Venus.glb" },
-          { index: 2, name: "Earth",   file: "./Earth.glb" },
-          { index: 3, name: "Mars",    file: "./Mars.glb" },
-          { index: 4, name: "Jupiter", file: "./Jupiter.glb" },
-          { index: 5, name: "Saturn",  file: "./Saturn.glb" },
-          { index: 6, name: "Uranus",  file: "./Uranus.glb" },
-          { index: 7, name: "Neptune", file: "./Neptune.glb" },
-          { index: 8, name: "Solar System", file: "./Solarsystem.glb" } 
+          { index: 0, name: "Mercury", file: "./Mercury.glb", url: baseUrl + "?page=mercury" },
+          { index: 1, name: "Venus",   file: "./Venus.glb",   url: baseUrl + "?page=venus" },
+          { index: 2, name: "Earth",   file: "./Earth.glb",   url: baseUrl + "?page=earth" },
+          { index: 3, name: "Mars",    file: "./Mars.glb",    url: baseUrl + "?page=mars" },
+          { index: 4, name: "Jupiter", file: "./Jupiter.glb", url: baseUrl + "?page=jupiter" },
+          { index: 5, name: "Saturn",  file: "./Saturn.glb",  url: baseUrl + "?page=saturn" },
+          { index: 6, name: "Uranus",  file: "./Uranus.glb",  url: baseUrl + "?page=uranus" },
+          { index: 7, name: "Neptune", file: "./Neptune.glb", url: baseUrl + "?page=neptune" },
+          { index: 8, name: "Solar System", file: "./Solarsystem.glb", url: baseUrl } // 太阳系直接去首页
         ];
 
-        arButton.addEventListener("click", () => {
+        // 1. 拍照按钮点击
+        photoButton.addEventListener("click", () => {
           if (!modelViewer.src) { alert("Model not loaded yet."); return; }
           const scene = document.querySelector('a-scene');
           if (scene) { scene.pause(); const video = document.querySelector('video'); if (video) video.pause(); }
-
           try { modelViewer.activateAR(); } catch (error) { alert("Failed: " + error); if (scene) scene.play(); }
         });
 
+        // 2. 初始化隐藏按钮容器
+        buttonContainer.style.display = "none";
+
+        // 3. 监听页面可见性
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 const scene = document.querySelector('a-scene');
@@ -116,17 +149,31 @@
             }
         });
 
-        const scene = document.querySelector('a-scene');
+        // 4. AR 目标识别事件绑定
         planets.forEach(planet => {
           const target = document.querySelector(`[mindar-image-target="targetIndex: ${planet.index}"]`);
           if (target) {
             target.addEventListener("targetFound", event => {
+              console.log("Found target:", planet.name);
+              
+              // 准备 3D 模型给 model-viewer (用于拍照)
               modelViewer.src = planet.file;
-              buttonText.innerText = "Photo with " + planet.name + " 📷";
-              arButton.style.display = "flex";
+              
+              // 更新按钮文字
+              photoButton.innerText = "📷 " + planet.name;
+              
+              // 更新跳转链接按钮事件
+              linkButton.onclick = function() {
+                window.location.href = planet.url;
+              };
+
+              // 显示按钮组
+              buttonContainer.style.display = "flex";
             });
+
             target.addEventListener("targetLost", event => {
-              arButton.style.display = "none";
+              // 丢失目标时隐藏按钮
+              buttonContainer.style.display = "none";
             });
           }
         });
@@ -135,7 +182,10 @@
   </head>
   
   <body>
-    <button id="ar-button"><span id="btn-text">Take Photo</span></button>
+    <div id="button-container">
+      <button id="photo-button" class="ar-btn">📷 Photo</button>
+      <button id="link-button" class="ar-btn">🌐 Learn More</button>
+    </div>
 
     <model-viewer 
       id="viewer-singleton" src="" ar ar-modes="scene-viewer webxr quick-look" 
@@ -239,10 +289,3 @@
     </a-scene>
   </body>
 </html>
-
-
-
-
-
-
-
