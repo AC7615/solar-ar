@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <title>Solar System AR 2</title>
+    <title>Solar System AR </title>
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -149,7 +149,7 @@
 
           // 🔥 地球：AR 中极小，这里我们在拍照时设为 0.001 (可根据需要微调)
           { index: 2, name: "Earth",   buttonText: "Take a photo with Earth", file: "./Earth.glb",   url: baseUrl + "?page=earth", 
-            viewerScale: "0.0001 0.0001 0.0001" },
+            viewerScale: "0.00001 0.00001 0.00001" },
 
           { index: 3, name: "Mars",    buttonText: "Take a photo with Mars", file: "./Mars.glb",    url: baseUrl + "?page=mars", 
             viewerScale: "0.25 0.25 0.25" },
@@ -166,7 +166,7 @@
 
           // 🔥 海王星
           { index: 7, name: "Neptune", buttonText: "Take a photo with Neptune", file: "./Neptune.glb", url: baseUrl + "?page=neptune", 
-            viewerScale: "0.0001 0.0001 0.0001" },
+            viewerScale: "0.00001 0.00001 0.00001" },
 
           { index: 8, name: "Solar System", buttonText: "Take a photo with Solar System", file: "./Solarsystem.glb", url: baseUrl, 
             viewerScale: "0.5 0.5 0.5" }
@@ -336,4 +336,5 @@
     </a-scene>
   </body>
 </html>
+
 
