@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <title>Solar System AR </title>
+    <title>Solar System AR - Optimized (No Solar System)</title>
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -10,73 +10,49 @@
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 
     <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        background: transparent; /* 关键：防止背景遮挡摄像头 */
-      }
-
+      body { margin: 0; overflow: hidden; background: transparent; }
+      
       /* --- 按钮容器 --- */
       #button-container {
-        display: none; /* 默认隐藏，识别到才显示 */
-        position: fixed;
-        bottom: 50px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 9999; /* 确保在最上层 */
-        display: flex; 
-        gap: 15px; 
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        pointer-events: none; 
+        display: none; position: fixed; bottom: 50px; left: 50%;
+        transform: translateX(-50%); z-index: 9999; display: flex; 
+        gap: 15px; align-items: center; justify-content: center;
+        width: 100%; pointer-events: none; 
       }
+      .hidden-ui { display: none !important; }
 
-      /* --- 通用按钮样式 --- */
       .ar-btn {
-        pointer-events: auto;
-        border: none;
-        border-radius: 50px;
-        padding: 12px 24px;
-        font-family: sans-serif;
-        font-weight: bold;
-        font-size: 16px;
-        color: white;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-        cursor: pointer;
-        touch-action: manipulation;
-        transition: transform 0.1s;
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        gap: 5px;
+        pointer-events: auto; border: none; border-radius: 50px;
+        padding: 12px 24px; font-family: sans-serif; font-weight: bold;
+        font-size: 16px; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        cursor: pointer; touch-action: manipulation; transition: transform 0.1s;
+        white-space: nowrap; display: flex; align-items: center; gap: 5px;
       }
-
       .ar-btn:active { transform: scale(0.95); }
-
-      /* 📷 拍照按钮颜色 */
       #photo-button { background: linear-gradient(90deg, #ff512f, #dd2476); }
-      /* 🌐 网页链接按钮颜色 */
       #link-button { background: linear-gradient(90deg, #2193b0, #6dd5ed); }
 
-      /* Model Viewer 隐藏在后台，只用于生成拍照界面 */
-      model-viewer {
-        position: fixed; top: 0; left: 0; width: 1px; height: 1px; z-index: -1; opacity: 0;
-      }
+      /* Model Viewer 隐藏 */
+      model-viewer { position: fixed; top: 0; left: 0; width: 1px; height: 1px; z-index: -1; opacity: 0; }
       
       /* 加载提示遮罩 */
       #loading-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.8); z-index: 10000; display: flex;
+        background: rgba(0,0,0,0.9); z-index: 10000; display: flex;
         justify-content: center; align-items: center; color: white;
         font-family: sans-serif; font-size: 18px; pointer-events: none;
-        flex-direction: column; gap: 10px;
+        flex-direction: column; gap: 15px; text-align: center;
       }
-      #loading-overlay.hidden { display: none; }
+      #loading-bar {
+        width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;
+      }
+      #loading-progress {
+        width: 0%; height: 100%; background: #2193b0; transition: width 0.3s;
+      }
     </style>
 
     <script>
-      // --- 手势控制组件 (保持不变) ---
+      // --- Swipe Component ---
       AFRAME.registerComponent('swipe-control', {
         schema: { factor: {default: 0.015} },
         init: function () {
@@ -117,70 +93,47 @@
         }
       });
 
-      // --- 主逻辑 ---
       document.addEventListener("DOMContentLoaded", function() {
         const buttonContainer = document.getElementById("button-container");
         const photoButton = document.getElementById("photo-button");
         const linkButton = document.getElementById("link-button");
         const modelViewer = document.getElementById("viewer-singleton");
         const loadingOverlay = document.getElementById("loading-overlay");
-
-        // 监听 AR 加载状态，移除遮罩
+        const loadingText = document.getElementById("loading-text");
+        
         const scene = document.querySelector('a-scene');
+
         scene.addEventListener('arReady', () => {
-           loadingOverlay.classList.add('hidden');
            console.log("MindAR Ready");
+           loadingOverlay.style.display = 'none';
         });
+
         scene.addEventListener('arError', (e) => {
-           loadingOverlay.innerText = "AR Load Failed. Please check console.";
+           loadingText.innerText = "Error: Camera access denied or WebGL error.";
            console.error(e);
         });
 
         const baseUrl = "https://script.google.com/macros/s/AKfycbxJpISW_mtgn8YS2lrMpyDxZFEiux9yPtoh4p77OWAKqhETf2JZ59RoZjhuQSVbEp9D/exec";
 
-        // ⭐ 核心配置：在 viewerScale 中定义拍照时的缩放比例
-        // 这里的 viewerScale 不会影响 AR 扫描时的大小
+        // 🌟 已移除 Solar System (Index 8)
         const planets = [
-          { index: 0, name: "Mercury", buttonText: "Take a photo with Mercury", file: "./Mercury.glb", url: baseUrl + "?page=mercury", 
-            viewerScale: "0.5 0.5 0.5" },
-
-          { index: 1, name: "Venus",   buttonText: "Take a photo with Venus", file: "./Venus.glb",   url: baseUrl + "?page=venus", 
-            viewerScale: "0.6 0.6 0.6" },
-
-          // 🔥 地球：AR 中极小，这里我们在拍照时设为 0.001 (可根据需要微调)
-          { index: 2, name: "Earth",   buttonText: "Take a photo with Earth", file: "./Earth.glb",   url: baseUrl + "?page=earth", 
-            viewerScale: "0.0001 0.0001 0.0001" },
-
-          { index: 3, name: "Mars",    buttonText: "Take a photo with Mars", file: "./Mars.glb",    url: baseUrl + "?page=mars", 
-            viewerScale: "0.25 0.25 0.25" },
-
-          { index: 4, name: "Jupiter", buttonText: "Take a photo with Jupiter", file: "./Jupiter.glb", url: baseUrl + "?page=jupiter", 
-            viewerScale: "0.003 0.003 0.003" },
-
-          { index: 5, name: "Saturn",  buttonText: "Take a photo with Saturn", file: "./Saturn.glb",  url: baseUrl + "?page=saturn", 
-            viewerScale: "0.001 0.001 0.001" },
-
-          // 🔥 天王星：AR 中是 0.00001，这里拍照时给稍微大一点点，防止完全看不见
-          { index: 6, name: "Uranus",  buttonText: "Take a photo with Uranus", file: "./Uranus.glb",  url: baseUrl + "?page=uranus", 
-            viewerScale: "0.00005 0.00005 0.00005" },
-
-          // 🔥 海王星
-          { index: 7, name: "Neptune", buttonText: "Take a photo with Neptune", file: "./Neptune.glb", url: baseUrl + "?page=neptune", 
-            viewerScale: "0.0001 0.0001 0.0001" },
-
-          { index: 8, name: "Solar System", buttonText: "Take a photo with Solar System", file: "./Solarsystem.glb", url: baseUrl, 
-            viewerScale: "0.5 0.5 0.5" }
+          { index: 0, name: "Mercury", buttonText: "Photo with Mercury", file: "./Mercury.glb", url: baseUrl + "?page=mercury", viewerScale: "0.5 0.5 0.5" },
+          { index: 1, name: "Venus",   buttonText: "Photo with Venus",   file: "./Venus.glb",   url: baseUrl + "?page=venus",   viewerScale: "0.6 0.6 0.6" },
+          { index: 2, name: "Earth",   buttonText: "Photo with Earth",   file: "./Earth.glb",   url: baseUrl + "?page=earth",   viewerScale: "0.0001 0.0001 0.0001" },
+          { index: 3, name: "Mars",    buttonText: "Photo with Mars",    file: "./Mars.glb",    url: baseUrl + "?page=mars",    viewerScale: "0.25 0.25 0.25" },
+          { index: 4, name: "Jupiter", buttonText: "Photo with Jupiter", file: "./Jupiter.glb", url: baseUrl + "?page=jupiter", viewerScale: "0.003 0.003 0.003" },
+          { index: 5, name: "Saturn",  buttonText: "Photo with Saturn",  file: "./Saturn.glb",  url: baseUrl + "?page=saturn",  viewerScale: "0.001 0.001 0.001" },
+          { index: 6, name: "Uranus",  buttonText: "Photo with Uranus",  file: "./Uranus.glb",  url: baseUrl + "?page=uranus",  viewerScale: "0.00005 0.00005 0.00005" },
+          { index: 7, name: "Neptune", buttonText: "Photo with Neptune", file: "./Neptune.glb", url: baseUrl + "?page=neptune", viewerScale: "0.0001 0.0001 0.0001" }
         ];
 
-        // 拍照功能
+        // 拍照逻辑
         photoButton.addEventListener("click", () => {
           if (!modelViewer.src) { alert("Model not loaded yet."); return; }
-          // 拍照时暂停 AR 场景以节省性能
           if (scene) { scene.pause(); const video = document.querySelector('video'); if (video) video.pause(); }
           try { modelViewer.activateAR(); } catch (error) { alert("Failed: " + error); if (scene) scene.play(); }
         });
 
-        // 页面重新可见时恢复 AR 视频流
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 const video = document.querySelector('video');
@@ -188,33 +141,22 @@
             }
         });
 
-        // 绑定所有行星的识别事件
         planets.forEach(planet => {
           const target = document.querySelector(`[mindar-image-target="targetIndex: ${planet.index}"]`);
           if (target) {
             target.addEventListener("targetFound", event => {
-              
-              // 1. 设置模型文件给 model-viewer
               modelViewer.src = planet.file;
+              modelViewer.scale = planet.viewerScale || "1 1 1";
               
-              // 2. ⭐ 关键逻辑：应用独立的 viewerScale
-              // 这只改变拍照界面的大小，不影响 AR 场景
-              if (planet.viewerScale) {
-                modelViewer.scale = planet.viewerScale;
-              } else {
-                modelViewer.scale = "1 1 1"; 
-              }
-
-              // 3. 更新按钮
               photoButton.innerText = planet.buttonText;
               linkButton.onclick = function() { window.location.href = planet.url; };
-              
-              // 4. 显示按钮
-              buttonContainer.style.display = "flex";
+              buttonContainer.classList.remove('hidden-ui');
+              buttonContainer.style.display = 'flex';
             });
 
             target.addEventListener("targetLost", event => {
-              buttonContainer.style.display = "none";
+              buttonContainer.classList.add('hidden-ui');
+              buttonContainer.style.display = 'none';
             });
           }
         });
@@ -224,11 +166,12 @@
   
   <body>
     <div id="loading-overlay">
-        <div>Loading Solar System...</div>
-        <div style="font-size: 14px; opacity: 0.8;">Please allow camera access</div>
+        <div id="loading-text">Initializing AR Engine...</div>
+        <div style="font-size: 14px; opacity: 0.8; margin-bottom: 10px;">Please allow camera access</div>
+        <div id="loading-bar"><div id="loading-progress"></div></div>
     </div>
 
-    <div id="button-container">
+    <div id="button-container" class="hidden-ui">
       <button id="photo-button" class="ar-btn">Take a photo</button>
       <button id="link-button" class="ar-btn">🌐 Learn More</button>
     </div>
@@ -242,19 +185,8 @@
              color-space="sRGB" 
              renderer="colorManagement: true, physicallyCorrectLights: false, sortObjects: true" 
              vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
-
-      <a-assets>
-        <a-asset-item id="Mercury" src="./Mercury.glb"></a-asset-item>
-        <a-asset-item id="Venus" src="./Venus.glb"></a-asset-item>
-        <a-asset-item id="Earth" src="./Earth.glb"></a-asset-item>
-        <a-asset-item id="Mars" src="./Mars.glb"></a-asset-item>
-        <a-asset-item id="Jupiter" src="./Jupiter.glb"></a-asset-item>
-        <a-asset-item id="Saturn" src="./Saturn.glb"></a-asset-item>
-        <a-asset-item id="Uranus" src="./Uranus.glb"></a-asset-item>
-        <a-asset-item id="Neptune" src="./Neptune.glb"></a-asset-item>
-        <a-asset-item id="SolarSystem" src="./Solarsystem.glb"></a-asset-item>
-      </a-assets>
+             device-orientation-permission-ui="enabled: false"
+             gltf-model="dracoDecoderPath: https://www.gstatic.com/draco/versioned/decoders/1.5.6/;">
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
@@ -263,80 +195,52 @@
 
       <a-entity mindar-image-target="targetIndex: 0">
         <a-entity rotation="90 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Mercury" scale="0.55 0.55 0.55" swipe-control
-            animation="property: rotation; to: 0 -360 0; loop: true; dur: 35000; easing: linear">
-          </a-gltf-model>
+          <a-gltf-model src="./Mercury.glb" scale="0.55 0.55 0.55" swipe-control animation="property: rotation; to: 0 -360 0; loop: true; dur: 35000; easing: linear"></a-gltf-model>
         </a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1">
         <a-entity rotation="90 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Venus" scale="0.6 0.6 0.6" swipe-control
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 50000; easing: linear">
-          </a-gltf-model>
+          <a-gltf-model src="./Venus.glb" scale="0.6 0.6 0.6" swipe-control animation="property: rotation; to: 0 360 0; loop: true; dur: 50000; easing: linear"></a-gltf-model>
         </a-entity>
       </a-entity>
       
       <a-entity mindar-image-target="targetIndex: 2">
         <a-entity rotation="113 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Earth" scale="0.001 0.001 0.001" swipe-control
-            animation="property: rotation; to: 0 -360 0; loop: true; dur: 20000; easing: linear">
-          </a-gltf-model>
+          <a-gltf-model src="./Earth.glb" scale="0.001 0.001 0.001" swipe-control animation="property: rotation; to: 0 -360 0; loop: true; dur: 20000; easing: linear"></a-gltf-model>
         </a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 3">
         <a-entity rotation="115 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Mars" scale="0.25 0.25 0.25" swipe-control
-            animation="property: rotation; to: 0 -360 0; loop: true; dur: 20000; easing: linear">
-          </a-gltf-model>
+          <a-gltf-model src="./Mars.glb" scale="0.25 0.25 0.25" swipe-control animation="property: rotation; to: 0 -360 0; loop: true; dur: 20000; easing: linear"></a-gltf-model>
         </a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 4">
         <a-entity rotation="93 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Jupiter" scale="0.003 0.003 0.003" swipe-control
-            animation="property: rotation; to: 0 -360 0; loop: true; dur: 8000; easing: linear">
-          </a-gltf-model>
+          <a-gltf-model src="./Jupiter.glb" scale="0.003 0.003 0.003" swipe-control animation="property: rotation; to: 0 -360 0; loop: true; dur: 8000; easing: linear"></a-gltf-model>
         </a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 5">
         <a-entity rotation="117 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Saturn" scale="0.001 0.001 0.001" swipe-control
-            animation="property: rotation; to: 0 -360 0; loop: true; dur: 9000; easing: linear">
-          </a-gltf-model>
+          <a-gltf-model src="./Saturn.glb" scale="0.001 0.001 0.001" swipe-control animation="property: rotation; to: 0 -360 0; loop: true; dur: 9000; easing: linear"></a-gltf-model>
         </a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 6">
         <a-entity rotation="90 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Uranus" scale="0.00001 0.00001 0.00001" rotation="0 0 90" swipe-control
-            animation="property: rotation; to: 0 -360 90; loop: true; dur: 15000; easing: linear">
-          </a-gltf-model>
+          <a-gltf-model src="./Uranus.glb" scale="0.00001 0.00001 0.00001" rotation="0 0 90" swipe-control animation="property: rotation; to: 0 -360 90; loop: true; dur: 15000; easing: linear"></a-gltf-model>
         </a-entity>
       </a-entity>
       
       <a-entity mindar-image-target="targetIndex: 7">
         <a-entity rotation="118 0 0" position="0 0.3 0">
-          <a-gltf-model src="#Neptune" scale="0.001 0.001 0.001" swipe-control
-            animation="property: rotation; to: 0 -360 0; loop: true; dur: 16000; easing: linear">
-          </a-gltf-model>
-        </a-entity>
-      </a-entity>
-
-      <a-entity mindar-image-target="targetIndex: 8">
-        <a-entity rotation="90 0 0" position="0 0 0">
-          <a-gltf-model src="#SolarSystem" scale="1000 1000 1000" swipe-control
-            animation="property: rotation; to: 0 -360 0; loop: true; dur: 60000; easing: linear">
-          </a-gltf-model>
+          <a-gltf-model src="./Neptune.glb" scale="0.001 0.001 0.001" swipe-control animation="property: rotation; to: 0 -360 0; loop: true; dur: 16000; easing: linear"></a-gltf-model>
         </a-entity>
       </a-entity>
 
     </a-scene>
   </body>
 </html>
-
-
-
-
